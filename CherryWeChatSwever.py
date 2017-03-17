@@ -8,7 +8,7 @@
 # Created:      17/11/2015
 # Copyright:    (c) Steve Micallef 2015
 # -------------------------------------------------------------------------------
-import sys
+import sys, re, pdb
 import os,inspect,json,random
 import shutil
 import socket
@@ -81,7 +81,7 @@ def main():
         },
         '/favicon.ico':{
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': "img/favicon.ico"
+            'tools.staticfile.filename': os.path.join(getMainPath(),"static/img/favicon.ico")
         }
     }
     options_dict = {
@@ -97,7 +97,8 @@ def main():
         #'engine.autoreload_on': False
         'tools.sessions.on':True,
         'tools.sessions.storage_type':'file',
-        'tools.sessions.storage_path':getMainPath()+"\\tmp\\",
+ #       'tools.sessions.storage_path':getMainPath()+"\\tmp\\",
+        'tools.sessions.storage_path':getMainPath()+"/tmp/",
         'tools.sessions.timeout': 3600*24,
         'tools.sessions.httponly': True
         }
@@ -126,6 +127,9 @@ def getMainPath():
     if hasattr(sys, "frozen"):
         return os.path.dirname(unicode(sys.executable, sys.getfilesystemencoding()))
 
+    if sys.platform == "linux2":
+        return sys.path[1]
+
     return os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))
 def iif(condition, true_part, false_part):
     return (condition and [true_part] or [false_part])[0]
@@ -148,14 +152,14 @@ class CherryHttpWeChat(object):
 
             if cherrypy.session['_sessionid'] == cherrypy.session.id:
                 try:
-
+                        
                     _username = cherrypy.session['_username']
-                    _config_c = ConfigObj(getMainPath()+'\wxUserCookies\\'+_username+'.ini',encoding='GBK')
+                    _config_c = ConfigObj(getMainPath()+'/wxUserCookies/'+_username+'.ini',encoding='GBK')
                     #登录配置
                     _Login_Time = _config_c[u'登陆配置'][u'登陆时间']
                     _Login_id = _config_c[u'登陆配置']['UID']
                     #print _Login_Time
-                    _loginfile = getMainPath()+"\wxRoot\\"+ _Login_id + u"\\登陆文件.ini"
+                    _loginfile = getMainPath()+"/wxRoot/"+ _Login_id + "/loginfile.ini"
                     _config_l = ConfigObj(_loginfile,encoding='GBK')
                     _headimg = _config_l[u'用户配置'][u'头像数据'][0]+','+_config_l[u'用户配置'][u'头像数据'][1]
                     _flag = True
@@ -213,27 +217,20 @@ class CherryHttpWeChat(object):
                 cherrypy.session['_headphoto'] = res[37:].replace('\';','')
                 json_out = { 'code' : code,'msg':res[37:].replace('\';','') }
             if code == '200': #扫描并确认
-                # url = res[37:].replace('\";','')
-                #print
-                #print '\n'
-                url = res[37:].replace('\";','')
-                #print '\n'
-                #print '\n'
-                #print url
-
+                regx = r'window.redirect_uri="(\S+)";'
+                url  = re.search(regx, res).group(1)
                 result = self.My_Wechat.GetWeChatCookies(url)
-                #print result
                 if result is not None:
 
                     _username = cherrypy.session['_username']
-                    _config_Login = ConfigObj(getMainPath()+'\wxUserCookies\\'+_username+'.ini',encoding='GBK')
+                    _config_Login = ConfigObj(getMainPath()+'/wxUserCookies/'+_username+'.ini',encoding='GBK')
                     uid = txt_wrap_by('<wxuin>','</wxuin>',result['MSG'])
                     _config_Login[u'登陆配置'] = {}
                     _config_Login[u'登陆配置'][u'登陆时间'] = str(time.time())[:10]
                     _config_Login[u'登陆配置']['UID'] = uid
                     _config_Login.write()
 
-                    _config_Login = ConfigObj(getMainPath()+'\wxUserConfig\\'+uid+'.ini',encoding='GBK')
+                    _config_Login = ConfigObj(getMainPath()+'/wxUserConfig/'+uid+'.ini',encoding='GBK')
                     _config_Login[u'用户配置'] = {}
                     _config_Login[u'用户配置'][u'头像数据'] = cherrypy.session['_headphoto']
                     _config_Login[u'用户配置'][u'登陆ID']   = _username
@@ -243,10 +240,10 @@ class CherryHttpWeChat(object):
                     _config_Login[u'用户配置'][u'online']   = '1'
                     _config_Login[u'用户配置'][u'URL'] = url+"&fun=new&version=v2&lang=zh_CN"
                     _config_Login.write()
-                    if  os.path.exists(getMainPath()+"/wxRoot/"+uid+'/wxapi.dll') == False:
-                        shutil.copytree(getMainPath()+'/WEB/', getMainPath()+"/wxRoot/"+uid)
+                    #if  os.path.exists(getMainPath()+"/wxRoot/"+uid+'/wxapi.dll') == False:
+                    #    shutil.copytree(getMainPath()+'/WEB/', getMainPath()+"/wxRoot/"+uid)
 
-                    shutil.copyfile(getMainPath()+'\wxUserConfig\\'+uid+'.ini', getMainPath()+"/wxRoot/"+uid+'/'+u'登陆文件.ini')
+                    shutil.copyfile(getMainPath()+'/wxUserConfig/'+uid+'.ini', getMainPath()+"/wxRoot/"+uid+'/'+'loginfile.ini')
                     print 'run'
                     print  '\n'
 
@@ -291,28 +288,26 @@ class CherryHttpWeChat(object):
             if cherrypy.session['_sessionid'] == cherrypy.session.id:
 
                 try:
+                    raise KeyError 
                     _username = cherrypy.session['_username']
-                    _config_c = ConfigObj(getMainPath()+'\wxUserCookies\\'+_username+'.ini',encoding='GBK')
+                    _config_c = ConfigObj(getMainPath()+'/wxUserCookies/'+_username+'.ini',encoding='GBK')
                     #登录配置
                     _Login_Time = _config_c[u'登陆配置'][u'登陆时间']
                     _Login_id = _config_c[u'登陆配置']['UID']
                     #print _Login_Time
-                    _loginfile = getMainPath()+"\wxRoot\\"+ _Login_id + u"\\登陆文件.ini"
+                    _loginfile = getMainPath()+"/wxRoot/"+ _Login_id + "/loginfile.ini"
                     _config_l = ConfigObj(_loginfile,encoding='GBK')
 
                     _headimg = _config_l[u'用户配置'][u'头像数据'][0]+','+_config_l[u'用户配置'][u'头像数据'][1]
                     _online = _config_l[u'用户配置']['online']
-                    _loginfile = getMainPath()+"\wxRoot\\"+ _Login_id + "\Config\wxset.ini"
-                    #print _loginfile
+                    _loginfile = getMainPath()+"/wxRoot/"+ _Login_id + "/Config/wxset.ini"
 
                     _confi_r = ConfigObj(_loginfile,encoding='GBK')
-                    #print _confi_r
-                    _robotname = _confi_r[u'机器人设置'][u'机器人姓名']
+                    #_robotname = _confi_r[u'机器人设置'][u'机器人姓名']
+                    _robotname = 'olenji'
                     _uuid = ''
                     _isLogin =True
 
-                    #_robotname =_confi_r[u'机器人设置'][u'机器人姓名']
-                    #
                     if _online == '1':
                         _online=U'在线'
                     else:
@@ -362,16 +357,16 @@ class CherryHttpWeChat(object):
                     #return render_template(templatename="register.html", title=u'微信云端机器人 - 注册')
                     #
                     _username = cherrypy.session['_username']
-                    _config_c = ConfigObj(getMainPath()+'\wxUserCookies\\'+_username+'.ini',encoding='GBK')
+                    _config_c = ConfigObj(getMainPath()+'/wxUserCookies/'+_username+'.ini',encoding='GBK')
                     #登录配置
                     _Login_Time = _config_c[u'登陆配置'][u'登陆时间']
                     _Login_id = _config_c[u'登陆配置']['UID']
                     #print _Login_Time
-                    _loginfile = getMainPath()+"\wxRoot\\"+ _Login_id + u"\\登陆文件.ini"
+                    _loginfile = getMainPath()+"/wxRoot/"+ _Login_id + "/loginfile.ini"
                     _config_l = ConfigObj(_loginfile,encoding='GBK')
                     _headimg = _config_l[u'用户配置'][u'头像数据'][0]+','+_config_l[u'用户配置'][u'头像数据'][1]
 
-                    _loginfile = getMainPath()+"\wxRoot\\"+ _Login_id + "\Config\wxset.ini"
+                    _loginfile = getMainPath()+"/wxRoot/"+ _Login_id + "/Config/wxset.ini"
                     _confi_r   = ConfigObj(_loginfile,encoding='GBK')
                     _robotname = _confi_r[u'机器人设置'][u'机器人姓名']
                     _robotadd  = _confi_r[u'群管设置'][u'群管_加']
@@ -601,4 +596,5 @@ class CherryHttpWeChat(object):
 
     cloud_setting.exposed=True
 if __name__ == "__main__":
+    print os.path.join(getMainPath(),"img/favicon.ico")
     main()
