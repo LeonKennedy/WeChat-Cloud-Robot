@@ -1,3 +1,5 @@
 *.pyc
 tmp/*
 */*.pyc
+ext/mako/*.pyc
+ext/cherrypy/*.pyc

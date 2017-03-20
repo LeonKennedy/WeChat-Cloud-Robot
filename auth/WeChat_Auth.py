@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 # @Author: hkk
 # @Date:   2015-11-20 11:51:48
 # @Last Modified by:   anchen
@@ -17,7 +17,7 @@ class WeChat(object):
 
     loginInfo = {'BaseRequest':{}}
     header = {
-            'ContentType': 'application/json;charset=UTF-8',
+            'ContentType': 'application/json; charset=UTF-8',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36'
             }
     prehost = 'https://wx.qq.com/cgi-bin/mmwebwx-bin'
@@ -79,7 +79,7 @@ class WeChat(object):
             return None
 
     def login(self):
-        self.loginInfo['deviceid'] = u'e93jfdsaensdf1q'
+        self.loginInfo['deviceid'] = 'e93jfdsaensdf1q'
         self.weChatInit()
         self.weChatStatusNotify()
         self.getContact()
@@ -89,11 +89,11 @@ class WeChat(object):
 
     def weChatInit(self):
         url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=%s&lang=zh_CN' % int(time.time())
-        data = {u'BaseRequest': 
-                {u'DeviceID': self.loginInfo['deviceid'],
-                 u'Sid' : self.loginInfo['wxsid'].decode('utf-8'),
-                 u'Skey' : self.loginInfo['skey'].decode('utf-8'),
-                 u'Uin' : self.loginInfo['wxuin'].decode('utf-8')}}
+        data = {'BaseRequest': 
+                {'DeviceID': self.loginInfo['deviceid'],
+                 'Sid' : self.loginInfo['wxsid'].decode('utf-8'),
+                 'Skey' : self.loginInfo['skey'].decode('utf-8'),
+                 'Uin' : self.loginInfo['wxuin'].decode('utf-8')}}
         self.loginInfo.update(data)
         r = self.s.post(url, data=json.dumps(data), headers=self.header)
         dic = json.loads(r.content.decode('utf-8', 'replace'))
@@ -120,10 +120,6 @@ class WeChat(object):
             if 'Core' in i['NickName']:
                 print i
                 self.contact_t = i['UserName']
-
-
-            
-
 
     def weChatStatusNotify(self):
         url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify?lang=zh_CN&pass_ticket=%s' % self.loginInfo['pass_ticket']
@@ -214,19 +210,18 @@ class WeChat(object):
     def send_msg(self,touser, content):
         url = '%s/webwxsendmsg?pass_ticket=%s' % (self.prehost, self.loginInfo['pass_ticket'])
         data = {
-            u'BaseRequest' : self.loginInfo['BaseRequest'],
-            u'Msg': {
-                u'ClientMsgId': int(time.time() *1000),
-                u'LocalID':int(time.time() *1000),
-                u'FromUserName' : self.loginInfo['User']['UserName'],
-                u'Content': content,
-                u'ToUserName' : touser,
-                u'Type':1
+            'BaseRequest' : self.loginInfo['BaseRequest'],
+            'Msg': {
+                'ClientMsgId': int(time.time() *1000),
+                'LocalID':int(time.time() *1000),
+                'FromUserName' : self.loginInfo['User']['UserName'].decode('utf-8'),
+                'Content': content,
+                'ToUserName' : touser,
+                'Type':1
                 },
-            u'Scene':0
+            'Scene':0
             }
-        pdb.set_trace()
-        r = self.s.post(url, data = json.dumps(data, ensure_ascii=False), headers = self.header)
+        r = self.s.post(url, data = json.dumps(data, ensure_ascii=False).encode('utf-8'), headers = self.header)
 
     def logout(self):
         url = '%s/webwxlogout' % self.prehost
